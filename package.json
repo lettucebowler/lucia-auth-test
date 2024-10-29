@@ -15,7 +15,6 @@
 		"db:studio": "drizzle-kit studio"
 	},
 	"devDependencies": {
-		"@sveltejs/adapter-auto": "^3.0.0",
 		"@sveltejs/kit": "^2.0.0",
 		"@sveltejs/vite-plugin-svelte": "^4.0.0",
 		"@tailwindcss/aspect-ratio": "^0.4.2",
@@ -36,14 +35,10 @@
 		"tailwindcss": "^3.4.9",
 		"typescript": "^5.0.0",
 		"typescript-eslint": "^8.0.0",
-		"vite": "^5.0.3"
-	},
-	"dependencies": {
-		"@libsql/client": "^0.9.0",
-		"@node-rs/argon2": "^1.1.0",
+		"@sveltejs/adapter-cloudflare": "^4.7.4",
 		"@oslojs/crypto": "^1.0.1",
 		"@oslojs/encoding": "^1.1.0",
-		"@sveltejs/adapter-cloudflare": "^4.7.4",
-		"drizzle-orm": "^0.33.0"
+		"drizzle-orm": "^0.33.0",
+		"vite": "^5.0.3"
 	}
 }
