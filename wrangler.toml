@@ -1,0 +1,7 @@
+name = "lucia-auth-test"
+compatibility_date = "2024-06-01"
+
+[[ d1_databases ]]
+binding = "DB"
+database_name = "lucia-test"
+database_id = "0a7343e9-620a-4fcf-bbe7-7b902c057e9f"
