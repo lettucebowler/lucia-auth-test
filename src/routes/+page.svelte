@@ -5,7 +5,15 @@
 
 	export let data: PageData;
 
-	const image = `https://avatars.githubusercontent.com/u/${data.user.githubId}`;
+	const host = 'https://api.dicebear.com/7.x/bottts-neutral/svg';
+	const bgs = ['BF616A', 'D08770', 'EBCB8B', 'A3BE8C', 'B48EAD', '88C0D0', '81A1C1'];
+	const hostUrl = new URL(host);
+	bgs.forEach((backgroundColor) => {
+		hostUrl.searchParams.append('backgroundColor', backgroundColor);
+	});
+	const username = data.user.username;
+	hostUrl.searchParams.set('seed', username);
+	const image = hostUrl.href;
 </script>
 
 <h1>Hi, {data.user.username}!</h1>
