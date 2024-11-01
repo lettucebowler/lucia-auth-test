@@ -73,6 +73,7 @@ export async function GET(event: RequestEvent): Promise<Response> {
 
 	const emailListRequest = new Request('https://api.github.com/user/emails');
 	emailListRequest.headers.set('Authorization', `Bearer ${githubAccessToken}`);
+	emailListRequest.headers.set('User-Agent', 'lettucebowler-lucia-auth-test-app');
 	const emailListResponse = await fetch(emailListRequest);
 	const emailListResult: unknown = await emailListResponse.json();
 	if (!Array.isArray(emailListResult) || emailListResult.length < 1) {
