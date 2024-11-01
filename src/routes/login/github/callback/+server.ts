@@ -45,8 +45,9 @@ export async function GET(event: RequestEvent): Promise<Response> {
 	userRequest.headers.set('Authorization', `Bearer ${githubAccessToken}`);
 	const userResponse = await fetch(userRequest);
 	console.log('here 2.2');
-	console.log(userResponse);
-	const userResult: unknown = await userResponse.json();
+	const text = await userResponse.text();
+	console.log(text);
+	const userResult: unknown = JSON.parse(text);;
 	const userParser = new ObjectParser(userResult);
 
 	console.log('here 3')
