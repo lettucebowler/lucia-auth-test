@@ -7,7 +7,6 @@ import type { RequestEvent } from '@sveltejs/kit';
 // export const db = drizzle(client);
 
 export function createDb(event: RequestEvent) {
-	console.log(event);
 	if (!event.platform) {
 		throw new Error('Oh shit');
 	}
