@@ -39,9 +39,13 @@ export async function GET(event: RequestEvent): Promise<Response> {
 
 	const githubAccessToken = tokens.accessToken();
 
+	console.log('here 2.1');
+
 	const userRequest = new Request('https://api.github.com/user');
 	userRequest.headers.set('Authorization', `Bearer ${githubAccessToken}`);
 	const userResponse = await fetch(userRequest);
+	console.log('here 2.2');
+	console.log(userResponse);
 	const userResult: unknown = await userResponse.json();
 	const userParser = new ObjectParser(userResult);
 
