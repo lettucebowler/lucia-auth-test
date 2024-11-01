@@ -43,6 +43,7 @@ export async function GET(event: RequestEvent): Promise<Response> {
 
 	const userRequest = new Request('https://api.github.com/user');
 	userRequest.headers.set('Authorization', `Bearer ${githubAccessToken}`);
+	userRequest.headers.set('User-Agent', 'lettucebowler-lucia-auth-test-app');
 	const userResponse = await fetch(userRequest);
 	console.log('here 2.2');
 	const text = await userResponse.text();
