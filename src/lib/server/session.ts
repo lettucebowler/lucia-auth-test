@@ -1,73 +1,84 @@
-import { db } from "./db";
-import { encodeBase32, encodeHexLowerCase } from "@oslojs/encoding";
-import { sha256 } from "@oslojs/crypto/sha2";
+import { createDb } from './db';
+import { encodeBase32, encodeHexLowerCase } from '@oslojs/encoding';
+import { sha256 } from '@oslojs/crypto/sha2';
+import { userTable, sessionTable } from './db-schema';
 
-import type { User } from "./user";
-import type { RequestEvent } from "@sveltejs/kit";
+import type { User } from './user';
+import type { RequestEvent } from '@sveltejs/kit';
+import { eq } from 'drizzle-orm';
 
-export function validateSessionToken(token: string): SessionValidationResult {
+export async function validateSessionToken(
+	event: RequestEvent,
+	token: string
+): Promise<SessionValidationResult> {
+	const db = createDb(event);
 	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
-	const row = db.queryOne(
-		`
-SELECT session.id, session.user_id, session.expires_at, user.id, user.github_id, user.email, user.username FROM session
-INNER JOIN user ON session.user_id = user.id
-WHERE session.id = ?
-`,
-		[sessionId]
-	);
+	const [row] = await db
+		.select({
+			sessionId: sessionTable.id,
+			expiresAt: sessionTable.expiresAt,
+			userId: userTable.id,
+			githubId: userTable.githubId,
+			email: userTable.email,
+			username: userTable.username
+		})
+		.from(userTable)
+		.innerJoin(sessionTable, eq(sessionTable.userId, userTable.id))
+		.where(eq(sessionTable.id, sessionId));
 
-	if (row === null) {
+	if (!row) {
 		return { session: null, user: null };
 	}
 	const session: Session = {
-		id: row.string(0),
-		userId: row.number(1),
-		expiresAt: new Date(row.number(2) * 1000)
+		id: row.sessionId,
+		userId: row.userId,
+		expiresAt: new Date(row.expiresAt * 1000)
 	};
 	const user: User = {
-		id: row.number(3),
-		githubId: row.number(4),
-		email: row.string(5),
-		username: row.string(6)
+		id: row.userId,
+		githubId: row.githubId,
+		email: row.email,
+		username: row.username
 	};
 	if (Date.now() >= session.expiresAt.getTime()) {
-		db.execute("DELETE FROM session WHERE id = ?", [session.id]);
+		db.delete(sessionTable).where(eq(sessionTable.id, sessionId));
 		return { session: null, user: null };
 	}
 	if (Date.now() >= session.expiresAt.getTime() - 1000 * 60 * 60 * 24 * 15) {
 		session.expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
-		db.execute("UPDATE session SET expires_at = ? WHERE session.id = ?", [
-			Math.floor(session.expiresAt.getTime() / 1000),
-			session.id
-		]);
+		db.update(sessionTable)
+			.set({ expiresAt: Math.floor(session.expiresAt.getTime() / 1000) })
+			.where(eq(sessionTable.id, session.id));
 	}
 	return { session, user };
 }
 
-export function invalidateSession(sessionId: string): void {
-	db.execute("DELETE FROM session WHERE id = ?", [sessionId]);
+export async function invalidateSession(event: RequestEvent, sessionId: string): Promise<void> {
+	const db = createDb(event);
+	await db.delete(sessionTable).where(eq(sessionTable.id, sessionId));
 }
 
-export function invalidateUserSessions(userId: number): void {
-	db.execute("DELETE FROM session WHERE user_id = ?", [userId]);
+export async function invalidateUserSessions(event: RequestEvent, userId: number): Promise<void> {
+	const db = createDb(event);
+	await db.delete(sessionTable).where(eq(sessionTable.userId, userId));
 }
 
 export function setSessionTokenCookie(event: RequestEvent, token: string, expiresAt: Date): void {
-	event.cookies.set("session", token, {
+	event.cookies.set('session', token, {
 		httpOnly: true,
-		path: "/",
+		path: '/',
 		secure: import.meta.env.PROD,
-		sameSite: "lax",
+		sameSite: 'lax',
 		expires: expiresAt
 	});
 }
 
 export function deleteSessionTokenCookie(event: RequestEvent): void {
-	event.cookies.set("session", "", {
+	event.cookies.set('session', '', {
 		httpOnly: true,
-		path: "/",
+		path: '/',
 		secure: import.meta.env.PROD,
-		sameSite: "lax",
+		sameSite: 'lax',
 		maxAge: 0
 	});
 }
@@ -79,18 +90,23 @@ export function generateSessionToken(): string {
 	return token;
 }
 
-export function createSession(token: string, userId: number): Session {
+export async function createSession(
+	event: RequestEvent,
+	token: string,
+	userId: number
+): Promise<Session> {
 	const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)));
 	const session: Session = {
 		id: sessionId,
 		userId,
 		expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
 	};
-	db.execute("INSERT INTO session (id, user_id, expires_at) VALUES (?, ?, ?)", [
-		session.id,
-		session.userId,
-		Math.floor(session.expiresAt.getTime() / 1000)
-	]);
+	const db = createDb(event);
+	await db.insert(sessionTable).values({
+		id: session.id,
+		userId: session.userId,
+		expiresAt: Math.floor(session.expiresAt.getTime() / 1000)
+	});
 	return session;
 }
 

@@ -1,16 +1,28 @@
-import { db } from "./db";
+import type { RequestEvent } from '@sveltejs/kit';
+import { createDb } from './db';
+import { userTable } from './db-schema';
+import { eq } from 'drizzle-orm';
 
-export function createUser(githubId: number, email: string, username: string): User {
-	const row = db.queryOne("INSERT INTO user (github_id, email, username) VALUES (?, ?, ?) RETURNING user.id", [
-		githubId,
-		email,
-		username
-	]);
-	if (row === null) {
-		throw new Error("Unexpected error");
+export async function createUser(
+	event: RequestEvent,
+	githubId: number,
+	email: string,
+	username: string
+): Promise<User> {
+	const db = createDb(event);
+	const [row] = await db
+		.insert(userTable)
+		.values({
+			githubId,
+			email,
+			username
+		})
+		.returning({ userId: userTable.id });
+	if (!row) {
+		throw new Error('Unexpected error');
 	}
 	const user: User = {
-		id: row.number(0),
+		id: row.userId,
 		githubId,
 		email,
 		username
@@ -18,18 +30,24 @@ export function createUser(githubId: number, email: string, username: string): U
 	return user;
 }
 
-export function getUserFromGitHubId(githubId: number): User | null {
-	const row = db.queryOne("SELECT id, github_id, email, username FROM user WHERE github_id = ?", [githubId]);
-	if (row === null) {
+export async function getUserFromGitHubId(
+	event: RequestEvent,
+	githubId: number
+): Promise<User | null> {
+	const db = createDb(event);
+	const [row] = await db
+		.select({
+			id: userTable.id,
+			githubId: userTable.githubId,
+			email: userTable.email,
+			username: userTable.username
+		})
+		.from(userTable)
+		.where(eq(userTable.githubId, githubId));
+	if (!row) {
 		return null;
 	}
-	const user: User = {
-		id: row.number(0),
-		githubId: row.number(1),
-		email: row.string(2),
-		username: row.string(3)
-	};
-	return user;
+	return row satisfies User;
 }
 
 export interface User {
