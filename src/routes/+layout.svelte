@@ -1,6 +1,5 @@
-<script lang="ts">
-	import '../app.css';
-	let { children } = $props();
-</script>
+<svelte:head>
+	<title>GitHub OAuth example in SvelteKit</title>
+</svelte:head>
 
-{@render children()}
+<slot />

@@ -1,16 +1,18 @@
-// See https://svelte.dev/docs/kit/types#app.d.ts
+// See https://kit.svelte.dev/docs/types#app
 // for information about these interfaces
+import type { User } from "$lib/server/user";
+import type { Session } from "$lib/server/session";
+
 declare global {
 	namespace App {
+		// interface Error {}
 		interface Locals {
-			user: import('$lib/server/auth').SessionValidationResult['user'];
-			session: import('$lib/server/auth').SessionValidationResult['session'];
+			user: User | null;
+			session: Session | null;
 		}
-		interface Platform {
-			env: {
-				DB: D1Database;
-			};
-		}
+		// interface PageData {}
+		// interface PageState {}
+		// interface Platform {}
 	}
 }
 

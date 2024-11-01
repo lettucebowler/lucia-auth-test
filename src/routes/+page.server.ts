@@ -1,13 +1,26 @@
-import * as auth from '$lib/server/auth.js';
+import { fail, redirect } from "@sveltejs/kit";
+import { deleteSessionTokenCookie, invalidateSession } from "$lib/server/session";
 
-export async function load(event) {
-	const sessionId = event.cookies.get(auth.sessionCookieName);
-	if (sessionId) {
-		const { session, user } = await auth.validateSession(event, sessionId);
-		return { user };
-	} else {
-		return {
-			user: null
-		};
+import type { Actions, RequestEvent } from "./$types";
+
+export async function load(event: RequestEvent) {
+	if (event.locals.session === null || event.locals.user === null) {
+		return redirect(302, "/login");
 	}
+	return {
+		user: event.locals.user
+	};
+}
+
+export const actions: Actions = {
+	default: action
+};
+
+async function action(event: RequestEvent) {
+	if (event.locals.session === null) {
+		return fail(401);
+	}
+	invalidateSession(event.locals.session.id);
+	deleteSessionTokenCookie(event);
+	return redirect(302, "/login");
 }
