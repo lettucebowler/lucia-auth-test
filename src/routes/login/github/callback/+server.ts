@@ -11,6 +11,8 @@ export async function GET(event: RequestEvent): Promise<Response> {
 	const code = event.url.searchParams.get('code');
 	const state = event.url.searchParams.get('state');
 
+	console.log('start');
+
 	if (storedState === null || code === null || state === null) {
 		return new Response('Please restart the process.', {
 			status: 400
@@ -22,6 +24,8 @@ export async function GET(event: RequestEvent): Promise<Response> {
 		});
 	}
 
+	console.log('here 1')
+
 	let tokens: OAuth2Tokens;
 	try {
 		tokens = await github.validateAuthorizationCode(code);
@@ -31,6 +35,8 @@ export async function GET(event: RequestEvent): Promise<Response> {
 		});
 	}
 
+	console.log('here 2');
+
 	const githubAccessToken = tokens.accessToken();
 
 	const userRequest = new Request('https://api.github.com/user');
@@ -38,6 +44,8 @@ export async function GET(event: RequestEvent): Promise<Response> {
 	const userResponse = await fetch(userRequest);
 	const userResult: unknown = await userResponse.json();
 	const userParser = new ObjectParser(userResult);
+
+	console.log('here 3')
 
 	const githubUserId = userParser.getNumber('id');
 	const username = userParser.getString('login');
@@ -54,6 +62,8 @@ export async function GET(event: RequestEvent): Promise<Response> {
 			}
 		});
 	}
+
+	console.log('here 4');
 
 	const emailListRequest = new Request('https://api.github.com/user/emails');
 	emailListRequest.headers.set('Authorization', `Bearer ${githubAccessToken}`);
@@ -79,10 +89,14 @@ export async function GET(event: RequestEvent): Promise<Response> {
 		});
 	}
 
+	console.log('here 5');
+
 	const user = await createUser(event, githubUserId, email, username);
 	const sessionToken = generateSessionToken();
 	const session = await createSession(event, sessionToken, user.id);
 	setSessionTokenCookie(event, sessionToken, session.expiresAt);
+
+	console.log('here 6');
 	return new Response(null, {
 		status: 302,
 		headers: {
